@@ -19,17 +19,50 @@ const TMDB_IMG = 'https://image.tmdb.org/t/p';
 async function tmdbFetch(endpoint, params = {}) {
   const key = state.tmdbKey;
   if (!key) {
+    console.error('TMDB API Key missing in state');
     showToast('TMDB API Key missing', 'error');
     return null;
   }
 
-  const url = new URL(`${TMDB_BASE}${endpoint}`);
+  // Clean endpoint and build URL
+  const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+  const url = new URL(`${TMDB_BASE}${cleanEndpoint}`);
+  
+  // Standard params
   url.searchParams.append('api_key', key);
-  Object.entries(params).forEach(([k, v]) => url.searchParams.append(k, v));
+  url.searchParams.append('language', 'en-US'); // Ensure consistent language
+  
+  Object.entries(params).forEach(([k, v]) => {
+    if (v !== undefined && v !== null) {
+      url.searchParams.append(k, v);
+    }
+  });
 
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`TMDB Error: ${res.statusText}`);
-  return res.json();
+  console.log(`TMDB Fetch: ${cleanEndpoint}`, params);
+
+  try {
+    const res = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json'
+      },
+      mode: 'cors' // Explicitly set CORS mode
+    });
+
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({}));
+      console.error('TMDB API Error:', res.status, errorData);
+      throw new Error(errorData.status_message || `TMDB Error: ${res.statusText}`);
+    }
+
+    return await res.json();
+  } catch (err) {
+    console.error('TMDB Network/CORS Error:', err);
+    if (err.name === 'TypeError' && err.message.includes('fetch')) {
+      throw new Error('Network error or CORS blocked. Check your internet connection or browser extensions (Ad-blockers).');
+    }
+    throw err;
+  }
 }
 
 const debounce = (fn, delay) => {
@@ -47,10 +80,17 @@ const toast = $('toast');
 
 // --- Initialization ---
 function init() {
-  renderGenres();
-  renderScreenshots();
-  renderQualities();
-  bindEvents();
+  console.log('Admin Panel Initialization started...');
+  try {
+    renderGenres();
+    renderScreenshots();
+    renderQualities();
+    bindEvents();
+    console.log('Admin Panel Initialization complete.');
+  } catch (err) {
+    console.error('Initialization failed:', err);
+    showToast('Failed to initialize admin panel. Check console.', 'error');
+  }
 }
 
 // --- Event Listeners ---
@@ -102,21 +142,31 @@ function bindEvents() {
   const resultsDiv = $('tmdbResults');
 
   const performTmdbSearch = async (query) => {
-    if (!query) {
+    if (!query || query.length < 2) {
       resultsDiv.classList.remove('active');
       return;
     }
     
     try {
+      $('searchStatus').textContent = 'Searching TMDB...';
       $('searchStatus').style.display = 'block';
+      $('searchStatus').style.color = 'var(--text-dim)';
+      
       const data = await tmdbFetch('/search/movie', { query });
       if (data && data.results) {
-        renderTmdbResults(data.results.slice(0, 8));
+        if (data.results.length === 0) {
+          $('searchStatus').textContent = 'No movies found on TMDB.';
+          resultsDiv.classList.remove('active');
+        } else {
+          renderTmdbResults(data.results.slice(0, 8));
+          $('searchStatus').style.display = 'none';
+        }
       }
     } catch (err) {
-      console.error(err);
-    } finally {
-      $('searchStatus').style.display = 'none';
+      console.error('Search failed:', err);
+      $('searchStatus').textContent = `Search Error: ${err.message}`;
+      $('searchStatus').style.color = '#ff5560';
+      showToast('TMDB Search failed: ' + err.message, 'error');
     }
   };
 
@@ -221,11 +271,15 @@ window.removeScreenshot = (i) => {
 
 function renderQualities() {
   const container = $('qualityList');
+  if (!container) {
+    console.error('Element #qualityList not found in DOM');
+    return;
+  }
   container.innerHTML = state.qualities.map((q, i) => `
     <tr>
-      <td><input type="text" value="${q.label}" oninput="updateQuality(${i}, 'label', this.value)" placeholder="e.g. 2160p"></td>
-      <td><input type="text" value="${q.size}" oninput="updateQuality(${i}, 'size', this.value)" placeholder="e.g. 2.4GB"></td>
-      <td><input type="url" value="${q.link}" oninput="updateQuality(${i}, 'link', this.value)" placeholder="Download link"></td>
+      <td><input type="text" value="${q.label || ''}" oninput="updateQuality(${i}, 'label', this.value)" placeholder="e.g. 2160p"></td>
+      <td><input type="text" value="${q.size || ''}" oninput="updateQuality(${i}, 'size', this.value)" placeholder="e.g. 2.4GB"></td>
+      <td><input type="url" value="${q.link || ''}" oninput="updateQuality(${i}, 'link', this.value)" placeholder="Download link"></td>
       <td><button type="button" class="btn-add" onclick="removeQuality(${i})" style="color:#ff5560">&times;</button></td>
     </tr>
   `).join('');
