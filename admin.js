@@ -1,4 +1,4 @@
-import { supabase } from "../src/lib/db.js";
+import { supabase } from "./db.js";
 
 // --- State Management ---
 const state = {
