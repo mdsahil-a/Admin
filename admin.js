@@ -1,4 +1,5 @@
 import { supabase } from "./db.js";
+import { fetchExtractData } from "./extract.js";
 
 // --- State Management ---
 const state = {
@@ -27,11 +28,11 @@ async function tmdbFetch(endpoint, params = {}) {
   // Clean endpoint and build URL
   const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
   const url = new URL(`${TMDB_BASE}${cleanEndpoint}`);
-  
+
   // Standard params
   url.searchParams.append('api_key', key);
   url.searchParams.append('language', 'en-US'); // Ensure consistent language
-  
+
   Object.entries(params).forEach(([k, v]) => {
     if (v !== undefined && v !== null) {
       url.searchParams.append(k, v);
@@ -146,12 +147,12 @@ function bindEvents() {
       resultsDiv.classList.remove('active');
       return;
     }
-    
+
     try {
       $('searchStatus').textContent = 'Searching TMDB...';
       $('searchStatus').style.display = 'block';
       $('searchStatus').style.color = 'var(--text-dim)';
-      
+
       const data = await tmdbFetch('/search/movie', { query });
       if (data && data.results) {
         if (data.results.length === 0) {
@@ -201,7 +202,7 @@ function renderTmdbResults(movies) {
 window.selectTmdbMovie = async (id) => {
   $('tmdbResults').classList.remove('active');
   $('tmdbSearchInput').value = 'Fetching details...';
-  
+
   try {
     const m = await tmdbFetch(`/movie/${id}`, { append_to_response: 'images' });
     if (!m) return;
@@ -212,7 +213,7 @@ window.selectTmdbMovie = async (id) => {
     $('rating').value = m.vote_average.toFixed(1);
     $('duration').value = m.runtime ? `${Math.floor(m.runtime / 60)}h ${m.runtime % 60}m` : '';
     $('description').value = m.overview;
-    
+
     if (m.genres && m.genres.length > 0) {
       $('genre').value = m.genres[0].name;
       state.genres = m.genres.map(g => g.name);
@@ -221,7 +222,7 @@ window.selectTmdbMovie = async (id) => {
 
     const poster = m.poster_path ? `${TMDB_IMG}/w500${m.poster_path}` : '';
     const banner = m.backdrop_path ? `${TMDB_IMG}/original${m.backdrop_path}` : '';
-    
+
     $('poster').value = poster;
     $('banner').value = banner;
     updatePreview('posterPreview', poster);
@@ -234,6 +235,36 @@ window.selectTmdbMovie = async (id) => {
 
     $('tmdbSearchInput').value = '';
     showToast(`Autofilled: ${m.title}`, 'success');
+
+    // Run Extraction
+    showToast('Extracting download links...', 'success');
+    try {
+      const extractedData = await fetchExtractData({ title: m.title });
+      if (extractedData && extractedData.length > 0) {
+        if (extractedData[0].title) {
+          const displayTitleEl = $('displayMovieTitle');
+          if (displayTitleEl) displayTitleEl.value = extractedData[0].title;
+        }
+
+        state.qualities = [];
+        for (let i = 1; i < extractedData.length; i++) {
+          const item = extractedData[i];
+          state.qualities.push({
+            label: item.quality || '',
+            size: item.size || '',
+            link: item.downloadLink || ''
+          });
+        }
+        renderQualities();
+        showToast('Download links extracted successfully!', 'success');
+      } else {
+        showToast('No download links found during extraction.', 'error');
+      }
+    } catch (extractErr) {
+      console.error('Extraction error:', extractErr);
+      showToast('Extraction failed.', 'error');
+    }
+
   } catch (err) {
     console.error(err);
     showToast('Failed to fetch TMDB details', 'error');
@@ -310,7 +341,7 @@ function updatePreview(id, url) {
 // --- Submit Logic ---
 async function handlePreviewAndSubmit(e) {
   e.preventDefault();
-  
+
   const movieData = {
     title: $('title').value.trim(),
     slug: $('slug').value.trim(),
