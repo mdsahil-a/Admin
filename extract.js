@@ -1,7 +1,7 @@
 // fullMovieExtractor.js
 
-import axios from 'https://cdn.jsdelivr.net/npm/axios@1.3.5/+esm';
-import * as cheerio from 'https://cdn.jsdelivr.net/npm/cheerio@1.0.0-rc.12/+esm';
+import axios from 'axios';
+import * as cheerio from 'cheerio';
 // fullMovieExtractor.js
 
 const MOVIE_NAME = "Border 2"; //  this to search for a different movie
@@ -11,6 +11,7 @@ let data=[];
 
 export const fetchExtractData = async (movieName) => {
 console.log("Starting movie data extraction for:", movieName);
+data = [];
 await getMovie(movieName);
     return data;
 }

@@ -402,7 +402,10 @@
         TMDB...</p>
       <div class="input-group" style="margin-top: 20px;">
         <label>Movie Title (Extracted)</label>
-        <input type="text" id="displayMovieTitle" placeholder="Selected movie title will appear here" readonly style="background: rgba(255,255,255,0.05); color: var(--accent); cursor: default;" />
+        <div style="display:flex; gap:10px;">
+          <input type="text" id="displayMovieTitle" placeholder="Selected movie title will appear here" style="flex:1" />
+          <button type="button" class="btn-add" id="refetchExtractBtn" style="padding:0 24px;">Refetch</button>
+        </div>
       </div>
     </section>
 
