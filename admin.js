@@ -1,4 +1,5 @@
 import { supabase } from "./db.js";
+// fetchExtractData removed in favor of API call
 
 // --- State Management ---
 const state = {
@@ -179,6 +180,20 @@ function bindEvents() {
     }
   });
 
+  // Refetch Extraction
+  const refetchBtn = $('refetchExtractBtn');
+  if (refetchBtn) {
+    refetchBtn.addEventListener('click', () => {
+      const customTitle = $('displayMovieTitle').value.trim();
+      if (customTitle && customTitle !== 'Extracting...' && customTitle !== 'Title not found') {
+        showToast(`Refetching links for: ${customTitle}...`, 'success');
+        performExtraction(customTitle);
+      } else {
+        showToast('Please enter a valid movie title to refetch.', 'error');
+      }
+    });
+  }
+
   // Form Submit
   form.addEventListener('submit', handlePreviewAndSubmit);
 }
@@ -233,12 +248,69 @@ window.selectTmdbMovie = async (id) => {
     }
 
     $('tmdbSearchInput').value = '';
-    showToast(`Autofilled: ${m.title}`, 'success');
+    showToast(`Autofilled: ${m.title}. Extracting links...`, 'success');
+
+    // Extract download links based on title
+    await performExtraction(m.title);
   } catch (err) {
     console.error(err);
     showToast('Failed to fetch TMDB details', 'error');
   }
 };
+
+async function performExtraction(queryTitle) {
+  try {
+    const displayTitle = $('displayMovieTitle');
+    if (displayTitle) displayTitle.value = 'Extracting...';
+    
+    const extRes = await fetch(`http://localhost:3000/api/extract?movie=${encodeURIComponent(queryTitle)}`);
+    const extJson = await extRes.json();
+    
+    if (extJson.success && extJson.data && extJson.data.length > 0) {
+      const extractedData = extJson.data;
+      
+      const titleObj = extractedData.find(item => item.title);
+      if (displayTitle) {
+        displayTitle.value = titleObj ? titleObj.title : 'Title not found';
+      }
+      if (titleObj && titleObj.title) {
+        $('title').value = titleObj.title;
+        if (!$('slug').dataset.edited) {
+          $('slug').value = titleObj.title.toLowerCase().replace(/[^\w ]+/g, '').replace(/ +/g, '-');
+        }
+      }
+      
+      const linkObjects = extractedData.filter(item => item.quality);
+      
+      state.qualities.forEach(q => { q.size = ''; q.link = ''; });
+      
+      linkObjects.forEach(linkObj => {
+        const stateQ = state.qualities.find(q => q.label === linkObj.quality);
+        if (stateQ) {
+          stateQ.size = linkObj.size;
+          stateQ.link = linkObj.downloadLink || '';
+        } else {
+          state.qualities.push({
+            label: linkObj.quality,
+            size: linkObj.size,
+            link: linkObj.downloadLink || ''
+          });
+        }
+      });
+      
+      renderQualities();
+      showToast(`Extraction complete for ${queryTitle}`, 'success');
+    } else {
+      if (displayTitle) displayTitle.value = 'No data found';
+      showToast(`No links found for ${queryTitle}`, 'error');
+    }
+  } catch (err) {
+    console.error('Extraction failed:', err);
+    const displayTitle = $('displayMovieTitle');
+    if (displayTitle) displayTitle.value = 'Extraction failed';
+    showToast(`Extraction failed for ${queryTitle}`, 'error');
+  }
+}
 
 // --- Renderers ---
 function renderGenres() {

@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CineVault Admin | Link Updater</title>
+  <link rel="icon" type="image/x-icon" href="../assets/favicon-DFXbXV-6.ico">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script type="module" crossorigin src="../assets/linkUpdater-BYychagc.js"></script>
+  <link rel="modulepreload" crossorigin href="../assets/db-sXxr54je.js">
+  <link rel="stylesheet" crossorigin href="../assets/linkUpdater-gkkYh5sB.css">
+</head>
+<body>
+
+  <div class="container">
+    <header>
+      <div class="logo">Cine<span>Vault</span> Link Updater</div>
+      <a href="../index.html" class="back-link">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+        Back to Dashboard
+      </a>
+    </header>
+
+    <!-- Search Section -->
+    <section class="search-section">
+      <div class="search-container">
+        <input type="text" id="searchInput" class="search-input" placeholder="Search movies by title, year, or genre...">
+      </div>
+    </section>
+
+    <!-- Main List/Table -->
+    <main class="updater-card">
+      <div class="section-title">Manage Download Links</div>
+      
+      <div id="loadingState" class="state-container">
+        <div class="state-spinner"></div>
+        <div class="state-text">Fetching movies from CineVault...</div>
+      </div>
+
+      <table class="movies-table" id="moviesTable" style="display: none;">
+        <thead>
+          <tr>
+            <th style="width: 10%;">Poster</th>
+            <th style="width: 25%;">Movie Name</th>
+            <th style="width: 30%;">Old Download Link</th>
+            <th style="width: 35%;">New Download Link</th>
+          </tr>
+        </thead>
+        <tbody id="moviesTableBody">
+          <!-- Dynamically populated rows -->
+        </tbody>
+      </table>
+
+      <div id="emptyState" class="state-container" style="display: none;">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--text-dim);"><circle cx="12" cy="12" r="10"></circle><line x1="8" y1="12" x2="16" y2="12"></line></svg>
+        <div class="state-text">No movies found matching your search.</div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toast">
+    <span id="toastIcon"></span>
+    <span id="toastMessage"></span>
+  </div>
+
+</body>
+</html>

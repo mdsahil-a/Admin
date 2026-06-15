@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CineVault Admin | Movie Management</title>
+  <link rel="icon" type="image/x-icon" href="./assets/favicon-DFXbXV-6.ico">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
+    rel="stylesheet">
+  <style>
+    :root {
+      --bg: #050508;
+      --card-bg: rgba(15, 15, 25, 0.7);
+      --accent: #e50914;
+      --accent-glow: rgba(229, 9, 20, 0.4);
+      --purple: #b026ff;
+      --text: #f5f5f7;
+      --text-dim: #a1a1a6;
+      --border: rgba(255, 255, 255, 0.08);
+      --input-bg: rgba(0, 0, 0, 0.3);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      background-image:
+        radial-gradient(circle at 10% 20%, rgba(229, 9, 20, 0.05) 0%, transparent 40%),
+        radial-gradient(circle at 90% 80%, rgba(176, 38, 255, 0.05) 0%, transparent 40%);
+      padding: 40px 20px;
+    }
+
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 40px;
+    }
+
+    .logo {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.8rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, var(--accent), var(--purple));
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    .logo span {
+      font-weight: 300;
+      color: #fff;
+      -webkit-text-fill-color: #fff;
+    }
+
+    /* TMDB Search Section */
+    .tmdb-search-section {
+      background: var(--card-bg);
+      backdrop-filter: blur(20px);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 30px;
+      margin-bottom: 30px;
+      position: relative;
+      z-index: 10;
+    }
+
+    .tmdb-results {
+      position: absolute;
+      top: calc(100% + 5px);
+      left: 0;
+      right: 0;
+      background: #0f0f1a;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 16px;
+      max-height: 400px;
+      overflow-y: auto;
+      z-index: 9999;
+      display: none;
+      box-shadow: 0 30px 60px rgba(0, 0, 0, 0.9);
+    }
+
+    .tmdb-results.active {
+      display: block;
+    }
+
+    .tmdb-item {
+      display: flex;
+      gap: 15px;
+      padding: 12px;
+      cursor: pointer;
+      transition: background 0.2s;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .tmdb-item:hover {
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .tmdb-item img {
+      width: 45px;
+      height: 68px;
+      border-radius: 6px;
+      object-fit: cover;
+    }
+
+    .tmdb-item-info h4 {
+      font-size: 0.95rem;
+      margin-bottom: 4px;
+    }
+
+    .tmdb-item-info p {
+      font-size: 0.8rem;
+      color: var(--text-dim);
+    }
+
+    .admin-card {
+      background: var(--card-bg);
+      backdrop-filter: blur(20px);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 40px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+      position: relative;
+      z-index: 1;
+    }
+
+    .section-title {
+      font-size: 1.2rem;
+      font-weight: 700;
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      color: var(--text);
+    }
+
+    .section-title::before {
+      content: '';
+      width: 4px;
+      height: 20px;
+      background: var(--accent);
+      border-radius: 2px;
+    }
+
+    .grid-form {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 24px;
+      margin-bottom: 40px;
+    }
+
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .input-group.full {
+      grid-column: 1 / -1;
+    }
+
+    label {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-dim);
+    }
+
+    input,
+    textarea,
+    select {
+      background: var(--input-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 16px;
+      color: #fff;
+      font-family: inherit;
+      font-size: 0.95rem;
+      transition: all 0.3s ease;
+    }
+
+    input:focus,
+    textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+      background: rgba(255, 255, 255, 0.05);
+      box-shadow: 0 0 0 4px var(--accent-glow);
+    }
+
+    .dynamic-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .tag {
+      background: rgba(229, 9, 20, 0.1);
+      border: 1px solid rgba(229, 9, 20, 0.3);
+      padding: 6px 14px;
+      border-radius: 999px;
+      font-size: 0.85rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .tag button {
+      background: none;
+      border: none;
+      color: #ff5560;
+      cursor: pointer;
+      font-size: 1.1rem;
+      line-height: 1;
+    }
+
+    .preview-box {
+      width: 100%;
+      height: 180px;
+      border-radius: 16px;
+      background: var(--input-bg);
+      border: 2px dashed var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      margin-top: 10px;
+    }
+
+    .preview-box img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .preview-box.poster {
+      height: 300px;
+      width: 200px;
+      margin: 0 auto;
+    }
+
+    .qualities-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+
+    .qualities-table th {
+      text-align: left;
+      padding: 12px;
+      font-size: 0.8rem;
+      color: var(--text-dim);
+    }
+
+    .qualities-table td {
+      padding: 8px;
+    }
+
+    .btn-add {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border);
+      color: #fff;
+      padding: 8px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      transition: all 0.2s;
+    }
+
+    .btn-add:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .btn-submit {
+      width: 100%;
+      padding: 18px;
+      background: linear-gradient(135deg, var(--accent), var(--purple));
+      border: none;
+      border-radius: 16px;
+      color: #fff;
+      font-size: 1.1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 10px 30px -10px var(--accent-glow);
+    }
+
+    .btn-submit:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 15px 40px -10px var(--accent-glow);
+      filter: brightness(1.1);
+    }
+
+    .btn-submit:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    #toast {
+      position: fixed;
+      bottom: 30px;
+      right: 30px;
+      padding: 16px 28px;
+      border-radius: 12px;
+      background: #1a1a2e;
+      color: #fff;
+      border-left: 4px solid var(--accent);
+      transform: translateY(100px);
+      opacity: 0;
+      transition: all 0.4s ease;
+      z-index: 9999;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+    }
+
+    #toast.show {
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    .screenshot-previews {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 12px;
+      margin-top: 15px;
+    }
+
+    .screenshot-item {
+      position: relative;
+      border-radius: 8px;
+      overflow: hidden;
+      aspect-ratio: 16/9;
+    }
+
+    .screenshot-item img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .screenshot-item button {
+      position: absolute;
+      top: 5px;
+      right: 5px;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: rgba(0, 0, 0, 0.7);
+      color: #fff;
+      border: none;
+      cursor: pointer;
+    }
+
+    @media (max-width: 768px) {
+      .admin-card {
+        padding: 24px;
+      }
+
+      .grid-form {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+  <script type="module" crossorigin src="./assets/main-DqvzW8QP.js"></script>
+  <link rel="modulepreload" crossorigin href="./assets/db-sXxr54je.js">
+</head>
+
+<body>
+
+  <div class="container">
+    <header>
+      <div class="logo">Cine<span>Vault</span> Admin</div>
+      <div style="display:flex; gap:15px; align-items:center;">
+        <a href="link-updater/index.html" style="color: var(--text); background: rgba(255,255,255,0.05); border: 1px solid var(--border); padding: 8px 16px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; font-weight: 600; transition: background 0.2s;">Link Updater</a>
+        <a href="/" style="color: var(--text-dim); text-decoration: none; font-size: 0.9rem;">← Back to Site</a>
+      </div>
+    </header>
+
+    <section class="tmdb-search-section">
+      <div class="section-title">Autofill with TMDB</div>
+      <div style="display:flex; gap:10px;">
+        <div style="flex:1; position:relative;">
+          <input type="text" id="tmdbSearchInput" placeholder="Search movie by name (e.g. Inception)..."
+            style="width:100%" />
+          <div id="tmdbResults" class="tmdb-results"></div>
+        </div>
+        <button type="button" class="btn-add" id="tmdbSearchBtn" style="padding:0 24px;">Search</button>
+      </div>
+      <p id="searchStatus" style="font-size:0.75rem; color:var(--text-dim); margin-top:8px; display:none;">Searching
+        TMDB...</p>
+      <div class="input-group" style="margin-top: 20px;">
+        <label>Movie Title (Extracted)</label>
+        <div style="display:flex; gap:10px;">
+          <input type="text" id="displayMovieTitle" placeholder="Selected movie title will appear here" style="flex:1" />
+          <button type="button" class="btn-add" id="refetchExtractBtn" style="padding:0 24px;">Refetch</button>
+        </div>
+      </div>
+    </section>
+
+    <main class="admin-card">
+      <form id="movieForm">
+        <div class="section-title">General Information</div>
+        <div class="grid-form">
+          <div class="input-group">
+            <label>Movie Title *</label>
+            <input type="text" id="title" placeholder="e.g. Interstellar" required />
+          </div>
+          <div class="input-group">
+            <label>Slug (Auto-generated)</label>
+            <input type="text" id="slug" placeholder="interstellar" />
+          </div>
+          <div class="input-group">
+            <label>Release Year *</label>
+            <input type="number" id="year" placeholder="2024" required />
+          </div>
+          <div class="input-group">
+            <label>Rating (0.0 - 10.0)</label>
+            <input type="number" id="rating" step="0.1" placeholder="8.5" />
+          </div>
+          <div class="input-group">
+            <label>Quality</label>
+            <input type="text" id="quality" placeholder="4K UHD" />
+          </div>
+          <div class="input-group">
+            <label>Duration</label>
+            <input type="text" id="duration" placeholder="2h 49m" />
+          </div>
+          <div class="input-group">
+            <label>Primary Genre</label>
+            <input type="text" id="genre" placeholder="Sci-Fi" />
+          </div>
+          <div class="input-group full">
+            <label>Description *</label>
+            <textarea id="description" rows="4" placeholder="Enter movie synopsis..." required></textarea>
+          </div>
+        </div>
+
+        <div class="section-title">Genres</div>
+        <div style="display:flex; gap:10px; margin-bottom:20px;">
+          <input type="text" id="genreInput" placeholder="Add genre..." style="flex:1" />
+          <button type="button" class="btn-add" id="addGenreBtn">Add</button>
+        </div>
+        <div class="dynamic-list" id="genreList"></div>
+        <div style="margin-bottom:40px;"></div>
+
+        <div class="section-title">Posters & Banners</div>
+        <div class="grid-form">
+          <div class="input-group">
+            <label>Poster URL *</label>
+            <input type="url" id="poster" placeholder="https://unsplash.com/..." required />
+            <div class="preview-box poster"><img id="posterPreview" src="" alt="Poster Preview"
+                style="display:none" /><span>Preview</span></div>
+          </div>
+          <div class="input-group">
+            <label>Banner URL *</label>
+            <input type="url" id="banner" placeholder="https://unsplash.com/..." required />
+            <div class="preview-box"><img id="bannerPreview" src="" alt="Banner Preview"
+                style="display:none" /><span>Preview</span></div>
+          </div>
+        </div>
+
+        <div class="section-title">Screenshots</div>
+        <div style="display:flex; gap:10px; margin-bottom:10px;">
+          <input type="url" id="screenshotInput" placeholder="Enter screenshot URL..." style="flex:1" />
+          <button type="button" class="btn-add" id="addScreenshotBtn">Add</button>
+        </div>
+        <div class="screenshot-previews" id="screenshotList"></div>
+        <div style="margin-bottom:40px;"></div>
+
+        <div class="section-title">Download Qualities</div>
+        <table class="qualities-table">
+          <thead>
+            <tr>
+              <th>Quality</th>
+              <th>Size</th>
+              <th>Download Link</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="qualityList">
+          </tbody>
+        </table>
+        <button type="button" class="btn-add" id="addQualityBtn" style="margin-top:10px;">+ Add Quality Row</button>
+        <div style="margin-bottom:50px;"></div>
+
+        <button type="submit" class="btn-submit" id="submitBtn">
+          <span>Publish Movie to CineVault</span>
+        </button>
+      </form>
+    </main>
+  </div>
+
+  <div id="toast">Movie uploaded successfully!</div>
+
+</body>
+
+</html>

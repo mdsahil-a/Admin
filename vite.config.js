@@ -5,6 +5,12 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     assetsDir: 'assets',
+    rollupOptions: {
+      input: {
+        main: 'index.html',
+        linkUpdater: 'link-updater/index.html'
+      }
+    }
   },
   server: {
     port: 5500, // Matching original Live Server port for consistency
